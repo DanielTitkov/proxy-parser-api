@@ -2,28 +2,35 @@ import requests
 import bs4
 import sqlalchemy
 
+from redis import Redis
+from rq import Queue
+from rq_scheduler import Scheduler
+from datetime import datetime
+
 from config import Config
-from database import Post, Base, init_db_session, form_pg_connection_string
-
-from typing import Optional
-
-
-def update_posts(config: Config, session: Optional[sqlalchemy.orm.session.Session]=None) -> None:
-    if not session:
-        session = init_db_session(Base, form_pg_connection_string(config))
-    response = requests.get(config.TAGRET_URL)
-    soup = bs4.BeautifulSoup(response.content, 'html.parser')
-    links = soup.select(config.POST_SELECTOR)
-    session.add_all(
-        (Post(url=l['href'], title=l.contents[0]) for l in links)
-    )
-    session.commit()    
-    session.close()
+from database import Post
 
 
 if __name__ == "__main__":
     config = Config()
 
-    session = init_db_session(Base, form_pg_connection_string(config))
+    redis_conn = Redis(
+        host=config.REDIS_HOST,
+        port=config.REDIS_PORT,
+        db=config.REDIS_DB
+    )
+    scheduler = Scheduler(connection=redis_conn)
 
-    update_posts(config, session)
+    # clean old jobs (in case of restart etc)
+    for job in scheduler.get_jobs():
+        scheduler.cancel(job)
+
+    scheduler.cron(
+        config.PARSER_SCHEDULE_STRING,
+        func=Post.fetch_all,
+        args=[config],
+        kwargs={},
+        repeat=None,  # repeat forever
+        queue_name="default",
+        meta={}
+    )

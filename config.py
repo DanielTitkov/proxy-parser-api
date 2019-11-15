@@ -1,13 +1,23 @@
 import os
+import multiprocessing
 
 
 class Config:
 
     # database
     DBUSER = os.getenv("DBUSER", "af")
-    DBPASSWORD = os.getenv("DBPASSWORD", "af")
+    DBPASSWORD = os.getenv("DBPASSWORD")
     DBHOST = os.getenv("DBHOST", "localhost")
     DBPORT = os.getenv("DBPORT", 5432)
+
+    # redis
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT= os.getenv("REDIS_PORT", 6379)
+    REDIS_DB= os.getenv("REDIS_DB", 0) 
+
+    # API
+    APIPORT = os.getenv("APIPORT", 8000)
+    APIWORKERS = os.getenv("APIWORKERS", multiprocessing.cpu_count() * 2 + 1)
 
     # parser
     TAGRET_URL = "https://news.ycombinator.com/"
@@ -41,3 +51,6 @@ class Config:
             "default": "none",
         }
     }
+
+    # Parser
+    PARSER_SCHEDULE_STRING = "* * * * *"

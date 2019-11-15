@@ -15,8 +15,47 @@ services:
   redis:
     restart: "unless-stopped"
     image: "redis"
+    networks:
+      - app_net
+    env_file:
+      - .env
+
+  api:
+    restart: "unless-stopped"
+    build:
+      context: ./
+      dockerfile: ./build/api/Dockerfile
     ports:
-      - '6379:6379'
+      - "8000:8000"
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app_net
+    env_file:
+      - .env
+
+  rqworker:
+    restart: "unless-stopped"
+    build:
+      context: ./
+      dockerfile: ./build/rqworker/Dockerfile
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app_net
+    env_file:
+      - .env
+  
+  parser: 
+    restart: "unless-stopped"
+    build:
+      context: ./
+      dockerfile: ./build/parser/Dockerfile
+    depends_on:
+      - redis
+      - postgres
     networks:
       - app_net
     env_file:

@@ -1,10 +1,12 @@
 import datetime
 import sqlalchemy
+import requests
+import bs4
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, DateTime, create_engine
 
-from typing import Dict
+from typing import Dict, Optional
 
 from config import Config
 
@@ -51,3 +53,16 @@ class Post(Base):
             "url": self.url,
             "created": self.created,
         }
+
+    @classmethod
+    def fetch_all(cls, config: Config, session: Optional[sqlalchemy.orm.session.Session] = None) -> None:
+        if not session:
+            session = init_db_session(Base, form_pg_connection_string(config))
+        response = requests.get(config.TAGRET_URL)
+        soup = bs4.BeautifulSoup(response.content, 'html.parser')
+        links = soup.select(config.POST_SELECTOR)
+        session.add_all(
+            (cls(url=l['href'], title=l.contents[0]) for l in links)
+        )
+        session.commit()
+        session.close()

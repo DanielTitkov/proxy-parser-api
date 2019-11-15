@@ -12,12 +12,12 @@ autopep8 = "*"
 sqlalchemy = "*"
 requests = "*"
 bs4 = "*"
-psycopg2 = "*"
 flask = "*"
 gunicorn = "*"
 rq = "*"
 rq-scheduler = "*"
 redis = "*"
+psycopg2-binary = "*"
 
 [requires]
 python_version = "3.7"
