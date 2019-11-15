@@ -3,6 +3,8 @@ Simple project with independent parser and API for getting results
 
 ## Setting up
 
+Defore building you may need to remane *.env.dist* to *.env* and replace sample values in it (database password etc.) with real values. 
+
 In order to run the service docker and docker-compose are required. 
 To run the service with docker-compose:
 ```bash
