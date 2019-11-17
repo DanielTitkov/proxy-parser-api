@@ -1,13 +1,14 @@
 import datetime
-import sqlalchemy
 import requests
 import bs4
+
+from loguru import logger
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import Column, Integer, String, DateTime, create_engine
 
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Union, Type
 
 from config import Config
 
@@ -21,8 +22,7 @@ def form_pg_connection_string(config: Config) -> str:
         database=config.DBUSER,
     )
 
-
-Base = declarative_base() # type: Any
+Base = declarative_base()  # type: Any
 config = Config()
 engine = create_engine(form_pg_connection_string(config))
 Session = scoped_session(sessionmaker(bind=engine))
@@ -48,19 +48,26 @@ class Post(Base):
         }
 
     @classmethod
-    def fetch_all(cls, config: Config) -> None:
-        Session
+    def fetch_all(cls, config: Union[Config, Type[Config]], only_new: bool = True) -> None:
         response = requests.get(config.TAGRET_URL)
         soup = bs4.BeautifulSoup(response.content, 'html.parser')
         links = soup.select(config.POST_SELECTOR)
+        posts = [cls(url=l['href'], title=l.contents[0]) for l in links]
+        logger.info(f"extracted {len(posts)} posts")
+        if only_new:
+            new_titles = [p.title for p in posts]
+            existing_posts = {
+                p[0] for p in Session.query(Post.title).filter(Post.title.in_(new_titles)).all()
+            }
+            logger.info(f"already in database: {existing_posts}")
+            posts = [p for p in posts if p.title not in existing_posts]
         try:
-            Session.add_all(
-                (cls(url=l['href'], title=l.contents[0]) for l in links)
-            )
+            Session.add_all(posts)
             Session.commit()
+            logger.info(f"saved posts to database: {posts}")
         except Exception as e:
             Session.rollback()
-            print("session failed", e)
+            logger.error(f"database operation failed: {e}")
             raise
         finally:
             Session.close()

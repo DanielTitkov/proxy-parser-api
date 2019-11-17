@@ -1,9 +1,13 @@
 FROM python:3.7-slim-buster
 
+RUN pip install pipenv
+
 WORKDIR /usr/src/app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY Pipfile ./
+COPY Pipfile.lock ./
+
+RUN set -ex && pipenv install --deploy --system
 
 COPY . . 
 

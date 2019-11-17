@@ -1,6 +1,8 @@
 import os
 import multiprocessing
 
+import logger
+
 
 class Config:
 
@@ -53,4 +55,4 @@ class Config:
     }
 
     # Parser
-    PARSER_SCHEDULE_STRING = "* * * * *"
+    PARSER_SCHEDULE_STRING = "30 * * * *"

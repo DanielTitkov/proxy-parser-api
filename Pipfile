@@ -18,6 +18,7 @@ rq = "*"
 rq-scheduler = "*"
 redis = "*"
 psycopg2-binary = "*"
+loguru = "*"
 
 [requires]
 python_version = "3.7"
