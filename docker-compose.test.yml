@@ -1,0 +1,77 @@
+version: '3.7'
+
+services:
+
+  faketarget:
+    image: "halverneus/static-file-server:latest"
+    volumes:
+      - ./tests/html:/web
+    networks:
+      - app_net
+    environment:
+      - PORT=8099
+    ports: 
+      - '8099:8099'
+    
+  postgres_test:
+    restart: "unless-stopped"
+    image: "postgres"
+    ports: 
+      - '5432:5432'
+    networks:
+      - app_net
+    env_file:
+      - ./tests/.env.test
+
+  redis_test:
+    restart: "unless-stopped"
+    image: "redis"
+    networks:
+      - app_net
+    env_file:
+      - ./tests/.env.test
+
+  api:
+    restart: "unless-stopped"
+    build:
+      context: ./
+      dockerfile: ./build/api/Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis_test
+      - postgres_test
+    networks:
+      - app_net
+    env_file:
+      - ./tests/.env.test
+
+  rqworker:
+    restart: "unless-stopped"
+    build:
+      context: ./
+      dockerfile: ./build/rqworker/Dockerfile
+    depends_on:
+      - redis_test
+      - postgres_test
+    networks:
+      - app_net
+    env_file:
+      - ./tests/.env.test
+  
+  parser: 
+    restart: "unless-stopped"
+    build:
+      context: ./
+      dockerfile: ./build/parser/Dockerfile
+    depends_on:
+      - redis_test
+      - postgres_test
+    networks:
+      - app_net
+    env_file:
+      - ./tests/.env.test
+
+networks:
+  app_net:
+    driver: "bridge"

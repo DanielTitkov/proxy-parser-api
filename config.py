@@ -22,7 +22,7 @@ class Config:
     APIWORKERS = os.getenv("APIWORKERS", multiprocessing.cpu_count() * 2 + 1)
 
     # parser
-    TAGRET_URL = "https://news.ycombinator.com/"
+    TAGRET_URL = os.getenv("TARGET_URL", "https://news.ycombinator.com/")
     POST_SELECTOR = "a.storylink"
 
     # query args
