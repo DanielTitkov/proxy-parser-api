@@ -67,3 +67,8 @@ Thus, request may take much longer, but new data may be returned right away.
 If update is set to *async*, 
 server issues a request for update and immediatly returns confirmation message (without returning any posts). 
 In several seconds (depending on network and other conditions) data will be updated. 
+
+## Working app
+
+Working version of the app can be found here: [http://185.251.88.239:8000/posts](http://185.251.88.239:8000/posts) 
+It will remain active until 01.12.2019.
