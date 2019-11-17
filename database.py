@@ -4,9 +4,10 @@ import requests
 import bs4
 
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import Column, Integer, String, DateTime, create_engine
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from config import Config
 
@@ -21,18 +22,10 @@ def form_pg_connection_string(config: Config) -> str:
     )
 
 
-def init_db_session(
-    base: sqlalchemy.ext.declarative.DeclarativeMeta,
-    connection_string: str,
-    create_tables: bool = True,
-) -> sqlalchemy.orm.Session:
-    engine = create_engine(connection_string)
-    if create_tables:
-        base.metadata.create_all(engine)
-    return sqlalchemy.orm.sessionmaker(bind=engine)()
-
-
-Base = declarative_base()
+Base = declarative_base() # type: Any
+config = Config()
+engine = create_engine(form_pg_connection_string(config))
+Session = scoped_session(sessionmaker(bind=engine))
 
 
 class Post(Base):
@@ -55,14 +48,34 @@ class Post(Base):
         }
 
     @classmethod
-    def fetch_all(cls, config: Config, session: Optional[sqlalchemy.orm.session.Session] = None) -> None:
-        if not session:
-            session = init_db_session(Base, form_pg_connection_string(config))
+    def fetch_all(cls, config: Config) -> None:
+        Session
         response = requests.get(config.TAGRET_URL)
         soup = bs4.BeautifulSoup(response.content, 'html.parser')
         links = soup.select(config.POST_SELECTOR)
-        session.add_all(
-            (cls(url=l['href'], title=l.contents[0]) for l in links)
-        )
-        session.commit()
-        session.close()
+        try:
+            Session.add_all(
+                (cls(url=l['href'], title=l.contents[0]) for l in links)
+            )
+            Session.commit()
+        except Exception as e:
+            Session.rollback()
+            print("session failed", e)
+            raise
+        finally:
+            Session.close()
+
+    @classmethod
+    def query_posts(cls, sort: str, order: str, limit: str, offset: str) -> Any:
+        query = Session.query(Post) \
+            .order_by(
+                getattr(Post, sort).desc()
+                if order == "desc"
+                else getattr(Post, sort)
+        ) \
+            .limit(limit) \
+            .offset(offset)
+        return query
+
+
+Base.metadata.create_all(engine)

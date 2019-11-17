@@ -8,7 +8,7 @@ from rq_scheduler import Scheduler
 from datetime import datetime
 
 from config import Config
-from database import Post
+from database import Post, Session
 
 
 if __name__ == "__main__":
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     redis_conn = Redis(
         host=config.REDIS_HOST,
         port=config.REDIS_PORT,
-        db=config.REDIS_DB
+        db=config.REDIS_DB,
     )
     scheduler = Scheduler(connection=redis_conn)
 

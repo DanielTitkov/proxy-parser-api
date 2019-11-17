@@ -3,17 +3,18 @@ from rq import Queue
 from redis import Redis
 
 from config import Config
-from database import Post, Base, init_db_session, form_pg_connection_string
+from database import Post, Base, Session, form_pg_connection_string
 from helpers.url import parse_args, validate_args
+
+from typing import Any
 
 
 app = Flask(__name__)
 
 
 @app.route('/posts/')
-def get_posts():
+def get_posts() -> Any:
     config = Config()  # do somewhere else
-    session = init_db_session(Base, form_pg_connection_string(config), False)
 
     args = parse_args(config.ARGS, request.args)
     valid, message = validate_args(config.ARGS, args)
@@ -32,14 +33,12 @@ def get_posts():
         job = q.enqueue(Post.fetch_all, config)
         return make_response(jsonify({"message": f"update requested, job id: {job.id}"}), 200)
 
-    query = session.query(Post) \
-        .order_by(
-            getattr(Post, args["sort"]).desc()
-            if args["order"] == "desc"
-            else getattr(Post, args["sort"])
-    ) \
-        .limit(args["limit"]) \
-        .offset(args["offset"])
+    query = Post.query_posts(
+        sort=args["sort"],
+        order=args["order"],
+        limit=args["limit"],
+        offset=args["offset"],
+    )
 
     return make_response(jsonify([p.to_dict() for p in query]), 200)
 

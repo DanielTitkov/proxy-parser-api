@@ -5,15 +5,15 @@ import multiprocessing
 class Config:
 
     # database
-    DBUSER = os.getenv("DBUSER", "af")
-    DBPASSWORD = os.getenv("DBPASSWORD")
+    DBUSER = os.getenv("POSTGRES_USER", "af")
+    DBPASSWORD = os.getenv("POSTGRES_PASSWORD")
     DBHOST = os.getenv("DBHOST", "localhost")
     DBPORT = os.getenv("DBPORT", 5432)
 
     # redis
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-    REDIS_PORT= os.getenv("REDIS_PORT", 6379)
-    REDIS_DB= os.getenv("REDIS_DB", 0) 
+    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+    REDIS_DB = int(os.getenv("REDIS_DB", 0))
 
     # API
     APIPORT = os.getenv("APIPORT", 8000)
