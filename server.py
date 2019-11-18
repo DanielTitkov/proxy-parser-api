@@ -4,7 +4,7 @@ from redis import Redis
 from loguru import logger
 
 from config import Config
-from database import Post, Base, Session, form_pg_connection_string
+from database import Post, Base
 from helpers.url import parse_args, validate_args
 
 from typing import Any

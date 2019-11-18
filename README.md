@@ -72,3 +72,13 @@ In several seconds (depending on network and other conditions) data will be upda
 
 Working version of the app can be found here: [http://185.251.88.239:8000/posts](http://185.251.88.239:8000/posts) 
 It will remain active until 01.12.2019.
+
+## Testing 
+
+Tests can be executed locally or in container. To run in container, use the following command:
+```bash
+docker-compose -f docker-compose.test.yml up --build
+```
+Tests may not pass on the first execution because some time is needed for database, queue and workers to get ready. If this is the case, just wait for few seconds, tests container will be restarted.
+
+To execute tests locally you will need to install all dependancies from Pipfile and run tests with pytest. 

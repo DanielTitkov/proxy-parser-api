@@ -2,6 +2,23 @@ version: '3.7'
 
 services:
 
+  tests:
+    restart: "unless-stopped"
+    build:
+      context: ./
+      dockerfile: ./build/tests/Dockerfile
+    depends_on:
+      - redis_test
+      - postgres_test
+      - faketarget
+      - api
+      - rqworker
+      - parser
+    networks:
+      - app_net
+    env_file:
+      - ./tests/.env.test   
+
   faketarget:
     image: "halverneus/static-file-server:latest"
     volumes:
@@ -22,6 +39,9 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
+    logging:
+      driver: none
+
 
   redis_test:
     restart: "unless-stopped"
@@ -30,6 +50,8 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
+    logging:
+      driver: none
 
   api:
     restart: "unless-stopped"
@@ -45,6 +67,8 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
+    logging:
+      driver: none
 
   rqworker:
     restart: "unless-stopped"
@@ -58,6 +82,8 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
+    logging:
+      driver: none
   
   parser: 
     restart: "unless-stopped"
@@ -71,6 +97,8 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
+    logging:
+      driver: none
 
 networks:
   app_net:

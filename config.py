@@ -7,8 +7,8 @@ import logger
 class Config:
 
     # database
-    DBUSER = os.getenv("POSTGRES_USER", "af")
-    DBPASSWORD = os.getenv("POSTGRES_PASSWORD")
+    DBUSER = os.getenv("POSTGRES_USER", "test")
+    DBPASSWORD = os.getenv("POSTGRES_PASSWORD", "test")
     DBHOST = os.getenv("DBHOST", "localhost")
     DBPORT = os.getenv("DBPORT", 5432)
 

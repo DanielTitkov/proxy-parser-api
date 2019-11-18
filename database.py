@@ -23,8 +23,7 @@ def form_pg_connection_string(config: Config) -> str:
     )
 
 Base = declarative_base()  # type: Any
-config = Config()
-engine = create_engine(form_pg_connection_string(config))
+engine = create_engine(form_pg_connection_string(Config))
 Session = scoped_session(sessionmaker(bind=engine))
 
 
@@ -55,12 +54,18 @@ class Post(Base):
         posts = [cls(url=l['href'], title=l.contents[0]) for l in links]
         logger.info(f"extracted {len(posts)} posts")
         if only_new:
-            new_titles = [p.title for p in posts]
-            existing_posts = {
-                p[0] for p in Session.query(Post.title).filter(Post.title.in_(new_titles)).all()
-            }
-            logger.info(f"already in database: {existing_posts}")
-            posts = [p for p in posts if p.title not in existing_posts]
+            try: 
+                new_titles = [p.title for p in posts]
+                existing_posts = {
+                    p[0] for p in Session.query(Post.title).filter(Post.title.in_(new_titles)).all()
+                }
+                logger.info(f"already in database: {existing_posts}")
+                posts = [p for p in posts if p.title not in existing_posts]
+            except Exception as e:
+                Session.rollback()
+                logger.error(f"database operation failed: {e}")
+            finally:
+                Session.close()            
         try:
             Session.add_all(posts)
             Session.commit()
@@ -74,14 +79,21 @@ class Post(Base):
 
     @classmethod
     def query_posts(cls, sort: str, order: str, limit: str, offset: str) -> Any:
-        query = Session.query(Post) \
-            .order_by(
-                getattr(Post, sort).desc()
-                if order == "desc"
-                else getattr(Post, sort)
-        ) \
-            .limit(limit) \
-            .offset(offset)
+        try: 
+            query = Session.query(Post) \
+                .order_by(
+                    getattr(Post, sort).desc()
+                    if order == "desc"
+                    else getattr(Post, sort)
+            ) \
+                .limit(limit) \
+                .offset(offset)
+        except Exception as e:
+            Session.rollback()
+            logger.error(f"database operation failed: {e}")
+            raise
+        finally:
+            Session.close()
         return query
 
 
