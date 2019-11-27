@@ -8,8 +8,8 @@ services:
       context: ./
       dockerfile: ./build/Dockerfile
     depends_on:
-      - redis_test
-      - postgres_test
+      - redis
+      - postgres
       - faketarget
       - api
       - rqworker
@@ -18,7 +18,7 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test   
-    command: sleep 4s && pytest -v
+    command: bash -c "sleep 4s && pytest -v"
 
   faketarget:
     image: "halverneus/static-file-server:latest"
@@ -31,7 +31,7 @@ services:
     ports: 
       - '8099:8099'
     
-  postgres_test:
+  postgres:
     restart: "unless-stopped"
     image: "postgres"
     ports: 
@@ -44,7 +44,7 @@ services:
       driver: none
 
 
-  redis_test:
+  redis:
     restart: "unless-stopped"
     image: "redis"
     networks:
@@ -62,13 +62,15 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - redis_test
-      - postgres_test
+      - redis
+      - postgres
     networks:
       - app_net
     env_file:
       - ./tests/.env.test
     command: gunicorn --bind 0.0.0.0:${APIPORT:-8000} --workers=${WORKERS:-5} server:app
+    logging:
+      driver: none
 
   rqworker:
     restart: "unless-stopped"
@@ -76,13 +78,15 @@ services:
       context: ./
       dockerfile: ./build/Dockerfile
     depends_on:
-      - redis_test
-      - postgres_test
+      - redis
+      - postgres
     networks:
       - app_net
     env_file:
       - ./tests/.env.test
     command: rq worker --url=redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB} high default low 
+    logging:
+      driver: none
   
   parser: 
     restart: "unless-stopped"
@@ -90,13 +94,15 @@ services:
       context: ./
       dockerfile: ./build/Dockerfile
     depends_on:
-      - redis_test
-      - postgres_test
+      - redis
+      - postgres
     networks:
       - app_net
     env_file:
       - ./tests/.env.test
-    command: python parser.py && rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --db ${REDIS_DB}
+    command: bash -c "python parser.py && rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --db ${REDIS_DB}"
+    logging:
+      driver: none
 
 networks:
   app_net:

@@ -62,7 +62,7 @@ services:
       - app_net
     env_file:
       - .env
-    command: python parser.py && rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --db ${REDIS_DB}
+    command: bash -c "python parser.py && rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --db ${REDIS_DB}"
 
 networks:
   app_net:
