@@ -6,7 +6,7 @@ services:
     restart: "unless-stopped"
     build:
       context: ./
-      dockerfile: ./build/tests/Dockerfile
+      dockerfile: ./build/Dockerfile
     depends_on:
       - redis_test
       - postgres_test
@@ -18,6 +18,7 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test   
+    command: sleep 4s && pytest -v
 
   faketarget:
     image: "halverneus/static-file-server:latest"
@@ -57,7 +58,7 @@ services:
     restart: "unless-stopped"
     build:
       context: ./
-      dockerfile: ./build/api/Dockerfile
+      dockerfile: ./build/Dockerfile
     ports:
       - "8000:8000"
     depends_on:
@@ -67,14 +68,13 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
-    logging:
-      driver: none
+    command: gunicorn --bind 0.0.0.0:${APIPORT:-8000} --workers=${WORKERS:-5} server:app
 
   rqworker:
     restart: "unless-stopped"
     build:
       context: ./
-      dockerfile: ./build/rqworker/Dockerfile
+      dockerfile: ./build/Dockerfile
     depends_on:
       - redis_test
       - postgres_test
@@ -82,14 +82,13 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
-    logging:
-      driver: none
+    command: rq worker --url=redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB} high default low 
   
   parser: 
     restart: "unless-stopped"
     build:
       context: ./
-      dockerfile: ./build/parser/Dockerfile
+      dockerfile: ./build/Dockerfile
     depends_on:
       - redis_test
       - postgres_test
@@ -97,8 +96,7 @@ services:
       - app_net
     env_file:
       - ./tests/.env.test
-    logging:
-      driver: none
+    command: python parser.py && rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --db ${REDIS_DB}
 
 networks:
   app_net:
